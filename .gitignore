@@ -1,0 +1,6 @@
+.hg*
+obj/*
+bin/*
+TAGS
+gilbarco.X/*
+
