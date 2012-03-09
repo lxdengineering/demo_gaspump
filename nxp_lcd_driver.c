@@ -125,7 +125,7 @@ void nxpInit(int pbClk)
     //
 #if defined GILBARCO_DUINOMITE
     // 3.3v on UEXT is switched by RB13
-	TRISBCLR = BIT_13;  // Set RB12 as output
+    TRISBCLR = BIT_13;  // Set RB12 as output
     LATBCLR = BIT_13;   // Low to enable 3.3v
 #else
   #error define a product...
@@ -136,7 +136,7 @@ void nxpInit(int pbClk)
     //actualFreq = I2CSetFrequency(LCD_I2C_BUS, pbClk, 40000);  // Seemed OK at 400KHz
     //I2CSetSlaveAddress(...   not needed if we're master only)
     I2CEnable(LCD_I2C_BUS, TRUE);
-	delay_ms(10);   // Note that some delay IS REQUIRED before i2c comms start.
+    delay_ms(10);   // Note that some delay IS REQUIRED before i2c comms start.
 
 
     // Set up data bytes to be sent for init, including:
@@ -161,9 +161,9 @@ void nxpInit(int pbClk)
     initBytes[5] = 0xf0;   // Blink mode normal, off   same? ignored?
 
     nxpRawWrite(LCD_A1, initBytes, 6);  // Small displays
-	delay_ms(2);
+    delay_ms(2);
     nxpRawWrite(LCD_A2, initBytes, 6);  // Large display
-	delay_ms(2);
+    delay_ms(2);
 
     // Set all segments on
     for(i=0; i<16; i++) initBytes[i] = 0xff;
@@ -172,7 +172,7 @@ void nxpInit(int pbClk)
     h4198_Write(1,initBytes);
     h4198_Write(2,initBytes);
     h4198_Write(3,initBytes);
-	delay_ms(750);
+    delay_ms(750);
 
     // Turn all segments off
     for(i=0; i<16; i++) initBytes[i] = 0;
@@ -181,7 +181,7 @@ void nxpInit(int pbClk)
     h4198_Write(1,initBytes);
     h4198_Write(2,initBytes);
     h4198_Write(3,initBytes);
-	delay_ms(200);
+    delay_ms(200);
 }
 
 
@@ -196,7 +196,7 @@ void nxpInit(int pbClk)
 int h4235_Write(int disp,         // Display number: 1 (top) or 2 (bottom)
                uint8_t segData[]) // 60bits (7.5bytes) of LCD segment data
 {
-	int i;
+    int i;
     uint8_t bytesToSend[16];
 
     if(disp < 1 || disp > 2) 
@@ -242,7 +242,7 @@ int h4235_Write(int disp,         // Display number: 1 (top) or 2 (bottom)
 //
 int h4198_Write(int dispNum, uint8_t segData[])
 {
-	int i;
+    int i;
     uint8_t bytesToSend[16];
 
     // Check dispNum in range
@@ -260,7 +260,7 @@ int h4198_Write(int dispNum, uint8_t segData[])
     }
 
     // Send to the controller IC
-    return nxpRawWrite(LCD_A1, bytesToSend, 8);
+    return nxpRawWrite(LCD_A1, bytesToSend, 7);
 }
 
 
@@ -286,16 +286,16 @@ int nxpRawWrite(uint8_t sa, uint8_t data[], int n)
 
     // Wait for bus idle, then issue an i2c start
     while(!I2CBusIsIdle(LCD_I2C_BUS))
-	{
-		// TODO: If the nxp's get stuck, this stop seems to shake
-	    // them loose.  Verify this a valid thing to do?
+    {
+        // TODO: If the nxp's get stuck, this stop seems to shake
+        // them loose.  Verify this a valid thing to do?
         // TODO: Proper timout, here and everywhere.
-		I2CStop(LCD_I2C_BUS);
-		delay_ms(2);
-	}
+        I2CStop(LCD_I2C_BUS);
+        delay_ms(2);
+    }
 
-	// MAGIC ALERT! The addition of this statement seems to get this code working.
-	// Without this, the following do..while() loop hangs forever.
+    // MAGIC ALERT! The addition of this statement seems to get this code working.
+    // Without this, the following do..while() loop hangs forever.
     status = I2CGetStatus(LCD_I2C_BUS);
 
     // I2C Start (Returns either success or I2C_MASTER_BUS_COLLISION)
@@ -309,8 +309,8 @@ int nxpRawWrite(uint8_t sa, uint8_t data[], int n)
     do 
     {
         status = I2CGetStatus(LCD_I2C_BUS);
-		if(I2C_ARBITRATION_LOSS & status)
-			I2CClearStatus(LCD_I2C_BUS, I2C_ARBITRATION_LOSS);
+        if(I2C_ARBITRATION_LOSS & status)
+            I2CClearStatus(LCD_I2C_BUS, I2C_ARBITRATION_LOSS);
     } while ( !(status & I2C_START) );
     
     // Send the device slave address (this device is write-only,
@@ -423,7 +423,7 @@ int h4198_SetSegments(const char *displayStr,   // Display string to process
             }
         }
     }
-	return 0;
+    return 0;
 }
 
 
@@ -472,7 +472,7 @@ int h4235_SetSegments(const char *displayStr,   // String to display
         }
     }
 
-	return 0;
+    return 0;
 }
 
 

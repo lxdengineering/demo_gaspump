@@ -12,11 +12,11 @@
 //
 /*
  * Configuration Bit Settings:
- *		- SYSCLK = 80 MHz (8MHz Crystal/ FPLLIDIV * FPLLMUL / FPLLODIV)
- *		- PBCLK = 40 MHz
- *		- Primary Osc w/PLL (XT+,HS+,EC+PLL)
- *		-  WDT OFF
- *		- Other options are don't care
+ *      - SYSCLK = 80 MHz (8MHz Crystal/ FPLLIDIV * FPLLMUL / FPLLODIV)
+ *      - PBCLK = 40 MHz
+ *      - Primary Osc w/PLL (XT+,HS+,EC+PLL)
+ *      -  WDT OFF
+ *      - Other options are don't care
  *
  ********************************************************************/
 
@@ -69,17 +69,17 @@ int main(void)
     // starter kit uses JTAG, whose pins are muxed w/ RA0,1,4 & 5.
     // If we wanted to disable JTAG to use those pins, we'd need:
     // DDPCONbits.JTAGEN = 0;  // Disable the JTAG port.
-	//DDPCON &= ~(1<<3);	// we don't use JTAG (for now)
+    //DDPCON &= ~(1<<3);    // we don't use JTAG (for now)
     mJTAGPortEnable(0);     // Turn off JTAG
 
- 	// Configure the device for maximum performance, but do not change
-	// the PBDIV clock divisor.  Given the options, this function will
-	// change the program Flash wait states, RAM wait state and enable
-	// prefetch cache, but will not change the PBDIV.  The PBDIV value
-	// is already set via the pragma FPBDIV option above.
-   	pbClk = SYSTEMConfig(CPU_HZ, SYS_CFG_WAIT_STATES | SYS_CFG_PCACHE);
+    // Configure the device for maximum performance, but do not change
+    // the PBDIV clock divisor.  Given the options, this function will
+    // change the program Flash wait states, RAM wait state and enable
+    // prefetch cache, but will not change the PBDIV.  The PBDIV value
+    // is already set via the pragma FPBDIV option above.
+    pbClk = SYSTEMConfig(CPU_HZ, SYS_CFG_WAIT_STATES | SYS_CFG_PCACHE);
 
-	//uart_init(pbClk);
+    //uart_init(pbClk);
 
     //putsUART2("\r\n\r\n\r\n*** Olimex PIC32-MX460 DEMO PROGRAM ***\r\n");
 
@@ -87,14 +87,14 @@ int main(void)
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // STEP 2. configure the port registers
-    //PORTSetPinsDigitalOut(IOPORT_D, BIT_1);				//LED1
-    //PORTSetPinsDigitalOut(IOPORT_D, BIT_2);				//LED2
+    //PORTSetPinsDigitalOut(IOPORT_D, BIT_1);               //LED1
+    //PORTSetPinsDigitalOut(IOPORT_D, BIT_2);               //LED2
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // STEP 3. initialize the port pin states = outputs low
-	//mPORTDSetBits(BIT_1);								//LED1
-    //mPORTDClearBits(BIT_2);								//LED2
-	
+    //mPORTDSetBits(BIT_1);                             //LED1
+    //mPORTDClearBits(BIT_2);                               //LED2
+    
     // Note: It is recommended to disable vector interrupts prior to
     // configuring the change notice module, if they are enabled.
     // The user must read one or more IOPORTs to clear the IO pin
@@ -109,7 +109,7 @@ int main(void)
     // Gilbarco, initialize
     nxpInit(pbClk);
 
-// TEST ONLY...
+    // TEST ONLY...  TODO: Some kind of init demo - all numbers, decimals, commas
     lcdWrite(LCD_L1,"111111,");
     lcdWrite(LCD_L1,"11111,1");
     lcdWrite(LCD_L1,"1111,11");
@@ -126,63 +126,85 @@ int main(void)
     lcdWrite(LCD_S2,"3.821");
     lcdWrite(LCD_S3,"4.027");
 
-	// Simple "fill-up" - Continuously inc gallons & price, and display
-    float gallons = 180.00;    // Starting gallon count
-	int   grade = 3;           // Fuel grade, 1,2, or 3
-    float price = 4.027;       // Price of grade 1
-    float total = 0;           // Total price
-    lcdWrite(LCD_S1,"----");
-    lcdWrite(LCD_S2,"----");
-    lcdWrite(LCD_S3,"4.027");
+
+    // -----------------------------------------------------------
+    // Simple "fill-up" demo
+    //
+    // Continuously "pump" fuel (increment
+    // gallons & price), and display. When gallon count goes over
+    // a certain limit, reset, select a new fuel grade, and
+    // start all over.
+    //
+    char *fuelName[] =    // Three grades / types of fuel
+    {
+        "  87  ",
+        " 100LL",
+        " JET A"
+    };
+    double pricePerGallon[] =
+    {
+        3.652,  // mogas 87
+        3.821,  // 100LL
+        4.027   // JET-A
+    };
+
+    double totalPrice;
+    double totalGallons = 200.0;
+    int   fuelGrade = 2;
     while(1)
     {
-        gallons += .009;                    // Inc total fuel pumped
-        total = gallons * price;            // Update total price
-        sprintf(tempStr, "%6.2f", total);   // Display price
+        // Pumping fuel: Increment gallons and price, and update big display
+        totalGallons += .009;  // .009 will make LS digit go thru all digits (backwards).
+        totalPrice = totalGallons * pricePerGallon[fuelGrade];
+        sprintf(tempStr, "%6.2f", totalPrice);
         lcdWrite(LCD_L1, tempStr);
-        sprintf(tempStr, "%6.3f", gallons); // Display gallons
+        sprintf(tempStr, "%6.3f", totalGallons);
         lcdWrite(LCD_L2, tempStr);
-        if(gallons > 200.0)
-		{
-			gallons = 190.0;             // Reset gallons
-            if(++grade > 3) grade = 1;   // Cycle fuel grade
 
-            lcdWrite(LCD_L1,"");
-            lcdWrite(LCD_L2,"");
-            lcdWrite(LCD_S1,"3.652");
-            lcdWrite(LCD_S2,"3.821");
-            lcdWrite(LCD_S3,"4.027");
-            delay_ms(500);
+        // When we hit 200g, cycle to the next fuel grade.
+        if(totalGallons > 200.0)
+        {
+            // Restart gallons at a high (non-zero) value, so we see lots of
+            // digits, and it won't take long to reset to a new fuel grade.
+            totalGallons = 180.0;               // Reset gallons
+            if(++fuelGrade >= 3) fuelGrade = 0; // Cycle fuel grade
 
-            switch(grade)
+            // Displays all on
+            lcdWrite(LCD_L1,"888.,8.,8.,8");  // All LCD segments
+            lcdWrite(LCD_L2,"888.,8.,8.,8");  // All LCD segments
+            for(i=0;i<3;i++) lcdWrite(LCD_S1 + i, "8.,8.,8.,8");
+            delay_ms(1200);
+
+            // Show fuel type/name, and all three prices
+            lcdWrite(LCD_L1, fuelName[fuelGrade]);
+            lcdWrite(LCD_L2, "------");
+            for(i=0; i<3; i++)
             {
-                case 1:
-                    lcdWrite(LCD_L1,"  87  ");
-                    lcdWrite(LCD_L2," CHEAP");
-                    lcdWrite(LCD_S1,"3.652"); price = 3.652;
-                    lcdWrite(LCD_S2,"----");
-                    lcdWrite(LCD_S3,"----");
-                    break;
-                case 2:
-                    lcdWrite(LCD_L1," 100LL");
-                    lcdWrite(LCD_L2," SO SO");
-                    lcdWrite(LCD_S1,"----");
-                    lcdWrite(LCD_S2,"3.821"); price = 3.821;
-                    lcdWrite(LCD_S3,"----");
-                    break;
-                case 3:
-                    lcdWrite(LCD_L1," JET A");
-                    lcdWrite(LCD_L2,"YABABE");
-                    lcdWrite(LCD_S1,"----");
-                    lcdWrite(LCD_S2,"----"); price = 4.027;
-                    lcdWrite(LCD_S3,"4.027");
-                    break;
+                sprintf(tempStr, "%5.3f", pricePerGallon[i]);
+                lcdWrite(LCD_S1 + i, tempStr);
             }
-            delay_ms(1000);
-		}
+            delay_ms(1200);
+
+            // Flash the price for this fuel grade
+            sprintf(tempStr, "%5.3f", pricePerGallon[fuelGrade]);
+            for(i=0; i<4; i++)
+            {
+                lcdWrite(LCD_S1 + fuelGrade, "    ");
+                delay_ms(350);
+                lcdWrite(LCD_S1 + fuelGrade, tempStr);
+                delay_ms(350);
+            }
+
+            for(i=0;i<3;i++) lcdWrite(LCD_S1 + i, "----");  // Clear small LCDs
+            //sprintf(tempStr, "%5.3f", pricePerGallon[fuelGrade]);
+            lcdWrite(LCD_S1 + fuelGrade, tempStr);
+
+            //delay_ms(1500);
+        }
         delay_us(500);
     }
 
+/* **********
     while(1)
     {
         for(i=0;i<16;i++) tempBytes[i] = 0;
@@ -205,6 +227,7 @@ int main(void)
         lcdWrite(LCD_S2, "4444");   delay_ms(200);
         lcdWrite(LCD_S3, "5555");   delay_ms(200);
     }
+***********  */
 
 /*
     i = 0;
